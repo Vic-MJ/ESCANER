@@ -1,0 +1,503 @@
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Gestión Textil - Escáner de Prendas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1976D2',
+                        secondary: '#424242',
+                        success: '#4CAF50',
+                        warning: '#FF9800',
+                        error: '#F44336',
+                        surface: '#FFFFFF',
+                        background: '#FAFAFA'
+                    },
+                    fontFamily: {
+                        'inter': ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-background font-inter">
+    <!-- @COMPONENT: NavigationBar [collapsible, main navigation] -->
+    <nav class="bg-surface shadow-md border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-barcode text-primary text-2xl mr-3"></i>
+                    <h1 class="text-xl font-semibold text-secondary">Sistema Textil</h1>
+                </div>
+                
+                <!-- Desktop Navigation -->
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <button id="scannerTab" class="nav-tab active bg-primary text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-camera mr-2"></i>Escáner
+                        </button>
+                        <button id="uploadTab" class="nav-tab text-secondary hover:bg-gray-100 px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-upload mr-2"></i>Cargar Excel
+                        </button>
+                        <button id="searchTab" class="nav-tab text-secondary hover:bg-gray-100 px-4 py-2 rounded-lg font-medium transition-colors">
+                            <i class="fas fa-search mr-2"></i>Búsqueda Manual
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobileMenuBtn" class="text-secondary hover:text-primary focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobileMenu" class="md:hidden hidden bg-surface border-t">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <button class="mobile-tab block w-full text-left px-3 py-2 rounded-md text-base font-medium text-primary bg-blue-50">
+                    <i class="fas fa-camera mr-2"></i>Escáner
+                </button>
+                <button class="mobile-tab block w-full text-left px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-gray-100">
+                    <i class="fas fa-upload mr-2"></i>Cargar Excel
+                </button>
+                <button class="mobile-tab block w-full text-left px-3 py-2 rounded-md text-base font-medium text-secondary hover:bg-gray-100">
+                    <i class="fas fa-search mr-2"></i>Búsqueda Manual
+                </button>
+            </div>
+        </div>
+    </nav>
+    <!-- @END_COMPONENT: NavigationBar -->
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- @COMPONENT: ScannerModule [main module, barcode scanning interface] -->
+        <div id="scannerModule" class="tab-content">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-secondary mb-4">Escáner de Códigos de Barras</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    Escanee el código de barras de la prenda para obtener información detallada instantáneamente.
+                </p>
+            </div>
+
+            <div class="bg-surface rounded-xl shadow-lg p-8 max-w-2xl mx-auto">
+                <!-- @FUNCTIONALITY: This scanner should implement camera API for barcode detection -->
+                <div class="scanner-container bg-gray-900 rounded-lg p-8 mb-6 min-h-64 flex items-center justify-center">
+                    <div class="text-center">
+                        <div id="scannerViewfinder" class="relative">
+                            <!-- Scanner viewfinder visualization -->
+                            <div class="w-48 h-48 border-2 border-dashed border-white opacity-50 rounded-lg flex items-center justify-center mb-4">
+                                <i class="fas fa-camera text-white text-4xl"></i>
+                            </div>
+                            <div class="absolute top-0 left-0 w-full h-full">
+                                <!-- Animated scanning line -->
+                                <div class="scanning-line bg-success opacity-75 h-0.5 w-full animate-pulse"></div>
+                            </div>
+                        </div>
+                        <p class="text-white text-sm">Posicione el código de barras dentro del marco</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <button id="startScanBtn" class="flex-1 bg-primary hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors" data-event="click:startScanning">
+                        <i class="fas fa-play mr-2"></i>Iniciar Escáner
+                    </button>
+                    <button id="stopScanBtn" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50" disabled>
+                        <i class="fas fa-stop mr-2"></i>Detener Escáner
+                    </button>
+                </div>
+
+                <!-- Scanner Status -->
+                <div id="scannerStatus" class="mt-4 p-3 rounded-lg bg-blue-50 text-primary text-center hidden">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span>Escáner listo. Esperando código de barras...</span>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ScannerModule -->
+
+        <!-- @COMPONENT: ExcelUploadModule [Excel file upload and processing] -->
+        <div id="uploadModule" class="tab-content hidden">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-secondary mb-4">Cargar Datos desde Excel</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    Importe los datos de prendas desde un archivo Excel con las columnas requeridas.
+                </p>
+            </div>
+
+            <div class="bg-surface rounded-xl shadow-lg p-8 max-w-4xl mx-auto">
+                <!-- File Upload Area -->
+                <div class="border-2 border-dashed border-gray-300 rounded-xl p-12 text-center mb-6 hover:border-primary transition-colors" id="uploadArea">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+                    <p class="text-xl font-medium text-secondary mb-2">Arrastre su archivo Excel aquí</p>
+                    <p class="text-gray-500 mb-4">o haga clic para seleccionar</p>
+                    <input type="file" id="excelFile" accept=".xlsx,.xls" class="hidden" data-mock="true">
+                    <button onclick="document.getElementById('excelFile').click()" class="bg-primary hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
+                        Seleccionar Archivo
+                    </button>
+                </div>
+
+                <!-- Required Columns Information -->
+                <div class="bg-blue-50 rounded-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-secondary mb-3">
+                        <i class="fas fa-info-circle text-primary mr-2"></i>Columnas Requeridas
+                    </h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-check-circle text-success mr-2"></i>CÓDIGO
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-check-circle text-success mr-2"></i>ÁREA
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-check-circle text-success mr-2"></i>DAMA / CAB
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-check-circle text-success mr-2"></i>PRENDA
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-check-circle text-success mr-2"></i>MODELO
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-check-circle text-success mr-2"></i>TELA
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-check-circle text-success mr-2"></i>COLOR
+                        </div>
+                        <div class="flex items-center text-sm">
+                            <i class="fas fa-check-circle text-success mr-2"></i>FICHA DE BORDADO
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload Progress -->
+                <div id="uploadProgress" class="hidden mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-sm font-medium text-secondary">Procesando archivo...</span>
+                        <span class="text-sm text-secondary">75%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-primary h-2 rounded-full" style="width: 75%"></div>
+                    </div>
+                </div>
+
+                <!-- Upload Results -->
+                <div id="uploadResults" class="hidden">
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <div class="bg-green-50 rounded-lg p-4 text-center">
+                            <i class="fas fa-check-circle text-success text-2xl mb-2"></i>
+                            <div class="text-2xl font-bold text-success" data-bind="uploadStats.successful">1,247</div>
+                            <div class="text-sm text-gray-600">Registros Cargados</div>
+                        </div>
+                        <div class="bg-yellow-50 rounded-lg p-4 text-center">
+                            <i class="fas fa-exclamation-triangle text-warning text-2xl mb-2"></i>
+                            <div class="text-2xl font-bold text-warning" data-bind="uploadStats.warnings">15</div>
+                            <div class="text-sm text-gray-600">Advertencias</div>
+                        </div>
+                        <div class="bg-red-50 rounded-lg p-4 text-center">
+                            <i class="fas fa-times-circle text-error text-2xl mb-2"></i>
+                            <div class="text-2xl font-bold text-error" data-bind="uploadStats.errors">3</div>
+                            <div class="text-sm text-gray-600">Errores</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ExcelUploadModule -->
+
+        <!-- @COMPONENT: ManualSearchModule [manual code search functionality] -->
+        <div id="searchModule" class="tab-content hidden">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-secondary mb-4">Búsqueda Manual</h2>
+                <p class="text-gray-600 max-w-2xl mx-auto">
+                    Ingrese el código de la prenda manualmente para buscar su información.
+                </p>
+            </div>
+
+            <div class="bg-surface rounded-xl shadow-lg p-8 max-w-2xl mx-auto">
+                <form id="manualSearchForm" class="space-y-6">
+                    <div>
+                        <label for="manualCode" class="block text-sm font-medium text-secondary mb-2">
+                            Código de la Prenda
+                        </label>
+                        <div class="relative">
+                            <input 
+                                type="text" 
+                                id="manualCode" 
+                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-lg font-mono" 
+                                placeholder="Ej: TXT001234567890"
+                                data-mock="true"
+                            >
+                            <div class="absolute inset-y-0 right-0 pr-3 flex items-center">
+                                <i class="fas fa-barcode text-gray-400"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        class="w-full bg-primary hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                        data-event="click:performManualSearch"
+                    >
+                        <i class="fas fa-search mr-2"></i>Buscar Prenda
+                    </button>
+                </form>
+
+                <!-- Search Results Preview -->
+                <div id="searchResults" class="mt-8 hidden">
+                    <div class="border-t pt-6">
+                        <h3 class="text-lg font-semibold text-secondary mb-4">Resultados de Búsqueda</h3>
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- @END_COMPONENT: ManualSearchModule -->
+    </div>
+
+    <!-- @COMPONENT: GarmentInfoModal [popup window for displaying garment information] -->
+    <div id="garmentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-surface rounded-xl shadow-2xl max-w-2xl w-full max-h-90vh overflow-auto">
+            <div class="sticky top-0 bg-surface border-b px-6 py-4 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-secondary">Información de la Prenda</h3>
+                <button id="closeModal" class="text-gray-400 hover:text-secondary text-xl">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="p-6">
+                <!-- Garment Code Header -->
+                <div class="bg-primary rounded-lg text-white p-4 mb-6 text-center">
+                    <div class="text-sm opacity-90">Código de la Prenda</div>
+                    <div class="text-2xl font-mono font-bold" data-bind="garment.code">TXT001234567890</div>
+                </div>
+
+                <!-- Garment Details Grid -->
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Área</div>
+                            <div class="text-lg font-semibold text-secondary" data-bind="garment.area">Producción A</div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Categoría</div>
+                            <div class="text-lg font-semibold text-secondary" data-bind="garment.category">Dama</div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Prenda</div>
+                            <div class="text-lg font-semibold text-secondary" data-bind="garment.type">Blusa</div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Modelo</div>
+                            <div class="text-lg font-semibold text-secondary" data-bind="garment.model">BL-2024-001</div>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Tela</div>
+                            <div class="text-lg font-semibold text-secondary" data-bind="garment.fabric">Algodón 100%</div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Color</div>
+                            <div class="flex items-center">
+                                <div class="w-6 h-6 bg-blue-500 rounded-full mr-3 border-2 border-gray-300"></div>
+                                <div class="text-lg font-semibold text-secondary" data-bind="garment.color">Azul Marino</div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <div class="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">Ficha de Bordado</div>
+                            <div class="text-lg font-semibold text-secondary" data-bind="garment.embroiderySheet">FB-001-2024</div>
+                        </div>
+
+                        <!-- Timestamp -->
+                        <div class="bg-green-50 rounded-lg p-4">
+                            <div class="text-sm font-medium text-success uppercase tracking-wide mb-1">Última Actualización</div>
+                            <div class="text-sm text-gray-600" data-bind="garment.lastUpdated">15 de Marzo, 2024 - 10:30 AM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 mt-8">
+                    <button class="flex-1 bg-primary hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                        <i class="fas fa-print mr-2"></i>Imprimir Etiqueta
+                    </button>
+                    <button class="flex-1 bg-gray-100 hover:bg-gray-200 text-secondary font-semibold py-3 px-6 rounded-lg transition-colors">
+                        <i class="fas fa-edit mr-2"></i>Editar Información
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: GarmentInfoModal -->
+
+    <!-- Error/Success Notifications -->
+    <div id="notifications" class="fixed top-20 right-4 z-50 space-y-2"></div>
+
+    <script>
+        // TODO: Implement barcode scanning, database integration, and Excel processing
+        
+        (() => {
+            // Navigation functionality
+            const tabs = {
+                scanner: document.getElementById('scannerModule'),
+                upload: document.getElementById('uploadModule'),
+                search: document.getElementById('searchModule')
+            };
+
+            const navTabs = document.querySelectorAll('.nav-tab, .mobile-tab');
+            const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            function showTab(tabName) {
+                // Hide all tabs
+                Object.values(tabs).forEach(tab => tab.classList.add('hidden'));
+                
+                // Show selected tab
+                tabs[tabName].classList.remove('hidden');
+                
+                // Update nav states
+                navTabs.forEach(tab => {
+                    tab.classList.remove('active', 'bg-primary', 'text-white', 'bg-blue-50', 'text-primary');
+                    tab.classList.add('text-secondary');
+                });
+
+                // Activate current tab
+                document.getElementById(tabName + 'Tab')?.classList.add('active', 'bg-primary', 'text-white');
+            }
+
+            // Tab navigation
+            document.getElementById('scannerTab')?.addEventListener('click', () => showTab('scanner'));
+            document.getElementById('uploadTab')?.addEventListener('click', () => showTab('upload'));
+            document.getElementById('searchTab')?.addEventListener('click', () => showTab('search'));
+
+            // Mobile menu toggle
+            mobileMenuBtn?.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Modal functionality
+            const modal = document.getElementById('garmentModal');
+            const closeModalBtn = document.getElementById('closeModal');
+            
+            function showGarmentInfo(garmentData) {
+                modal.classList.remove('hidden');
+                // TODO: Populate modal with real garment data
+            }
+
+            closeModalBtn?.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+
+            // Close modal on backdrop click
+            modal?.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+
+            // Scanner controls
+            const startScanBtn = document.getElementById('startScanBtn');
+            const stopScanBtn = document.getElementById('stopScanBtn');
+            const scannerStatus = document.getElementById('scannerStatus');
+
+            startScanBtn?.addEventListener('click', () => {
+                // TODO: Initialize barcode scanner
+                startScanBtn.disabled = true;
+                stopScanBtn.disabled = false;
+                scannerStatus.classList.remove('hidden');
+                
+                // Simulate finding a garment after 3 seconds
+                setTimeout(() => {
+                    showGarmentInfo({});
+                    stopScanBtn.click();
+                }, 3000);
+            });
+
+            stopScanBtn?.addEventListener('click', () => {
+                // TODO: Stop barcode scanner
+                startScanBtn.disabled = false;
+                stopScanBtn.disabled = true;
+                scannerStatus.classList.add('hidden');
+            });
+
+            // Manual search
+            const searchForm = document.getElementById('manualSearchForm');
+            searchForm?.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const code = document.getElementById('manualCode').value;
+                if (code) {
+                    // TODO: Search database for garment code
+                    showNotification('Buscando prenda...', 'info');
+                    setTimeout(() => {
+                        showGarmentInfo({});
+                    }, 1000);
+                }
+            });
+
+            // File upload simulation
+            const excelFile = document.getElementById('excelFile');
+            excelFile?.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    // TODO: Process Excel file
+                    document.getElementById('uploadProgress').classList.remove('hidden');
+                    setTimeout(() => {
+                        document.getElementById('uploadProgress').classList.add('hidden');
+                        document.getElementById('uploadResults').classList.remove('hidden');
+                    }, 2000);
+                }
+            });
+
+            // Notification system
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                const colors = {
+                    success: 'bg-green-500',
+                    error: 'bg-red-500',
+                    warning: 'bg-yellow-500',
+                    info: 'bg-blue-500'
+                };
+                
+                notification.className = `${colors[type]} text-white px-6 py-4 rounded-lg shadow-lg transform transition-transform duration-300 translate-x-full`;
+                notification.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        <span>${message}</span>
+                    </div>
+                `;
+                
+                document.getElementById('notifications').appendChild(notification);
+                
+                // Animate in
+                setTimeout(() => {
+                    notification.classList.remove('translate-x-full');
+                }, 100);
+                
+                // Remove after 3 seconds
+                setTimeout(() => {
+                    notification.classList.add('translate-x-full');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            // Initialize with scanner tab
+            showTab('scanner');
+        })();
+    </script>
+</body>
+</html>
