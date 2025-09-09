@@ -91,6 +91,7 @@ export class DatabaseStorage implements IStorage {
                 modelo: garment.modelo,
                 tela: garment.tela,
                 color: garment.color,
+                talla: garment.talla,
                 ficha_bordado: garment.ficha_bordado,
                 updatedAt: new Date()
               })
